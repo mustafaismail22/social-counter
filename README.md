@@ -7,8 +7,6 @@ Display count number of each social media
 example
 ==============
 
-<?php
-
 	$Social = new Social();
 
 	echo $Social->facebook('https://www.facebook.com/facebook');
@@ -21,4 +19,3 @@ example
 
 	echo $Social->github('https://github.com/mustafaismail22');
 
-?>
