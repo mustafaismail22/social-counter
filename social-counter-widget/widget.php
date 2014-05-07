@@ -47,7 +47,7 @@ class Social_Counter extends WP_Widget {
 
 			<ul class="subscribe">
 
-			<?php if(isset($instance['dribbble'])):
+			<?php if( !empty( $instance['dribbble'] ) ):
 
 				$dribbble = $Social->dribbble($instance['dribbble']);?>
 
@@ -60,7 +60,7 @@ class Social_Counter extends WP_Widget {
 			<?php endif; ?>
 
 
-            <?php if(!empty(($instance['vimeo']) ) ):
+            <?php if( !empty( $instance['vimeo'] ) ):
 
 				$vimeo = $Social->vimeo($instance['vimeo']);?>
 
@@ -73,7 +73,7 @@ class Social_Counter extends WP_Widget {
 			<?php endif; ?>
 
 
-            <?php if(!empty( $instance['youtube'] )):
+            <?php if( !empty( $instance['youtube'] ) ):
 
 				$youtube = $Social->youtube($instance['youtube']);?>
 
