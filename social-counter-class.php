@@ -21,6 +21,7 @@ class Social{
 	private   $youtube = 'youtube_count';
 	private   $facebook = 'facebook_count';
 	private   $github = 'github_count';
+	private   $twitter = 'twitter_count';
 
 	
 
@@ -68,6 +69,7 @@ class Social{
 		set_transient( $this->youtube , 0 , 1);
 		set_transient( $this->facebook , 0 , 1);
 		set_transient( $this->github , 0 , 1);
+		set_transient( $this->twitter , 0 , 1);
 
 	}
 
@@ -87,8 +89,10 @@ class Social{
 			if( isset($face_link['host']) && ( $face_link['host'] == 'www.dribbble.com' || $face_link['host']  == 'dribbble.com' ) ){
 
 				$page_name = substr( @parse_url($page_link, PHP_URL_PATH), 1);
+
+				$json = "http://api.dribbble.com/{$page_name}";
 				
-				$data = json_decode( $this->curl( 'http://api.dribbble.com/' . $page_name) , true);
+				$data = json_decode( $this->curl($json) , true);
 
 				if (isset($data['followers_count'])) {
 					$count = $data['followers_count'];
@@ -158,8 +162,6 @@ class Social{
 
 				$json = "http://gdata.youtube.com/feeds/api/users/{$page_name}?alt=json";
 
-
-
 				$data = json_decode( $this->curl($json) , true);
 
 				if ( isset($data['entry']['yt$statistics']['subscriberCount']) ) {
@@ -227,7 +229,9 @@ class Social{
 
 				$page_name = substr( @parse_url($page_link, PHP_URL_PATH), 1);
 
-				$data = json_decode( $this->curl( 'https://api.github.com/users/' . $page_name) , true);
+				$json = "https://api.github.com/users/{$page_name}";
+
+				$data = json_decode( $this->curl($json) , true);
 
 
 				if (isset($data['followers'])) {
@@ -244,6 +248,37 @@ class Social{
 
 	}
 
+	public function twitter( $twitter_username = null , $consumer_key = null , $consumer_secret = null , $access_token = null , $access_token_secret = null  , $id = null ) {
+
+		if (!class_exists('TwitterOAuth'))
+			return '-2';
+
+		if( empty($twitter_username) || empty($consumer_key) || empty($consumer_secret) || empty($access_token) || empty($access_token_secret) ){
+			return '-1';
+		}
+
+
+		if (!empty($id))
+			$this->twitter = $id;
+
+		$id = $this->twitter;
+
+		$count = 0;
+
+		if( false === ( $count = get_transient($id) ) ){
+
+			$Connection = new TwitterOAuth( $consumer_key , $consumer_secret , $access_token , $access_token_secret	);
+			$data = (array) $Connection->get('users/show', array('screen_name' => $twitter_username));
+
+			if (isset($data['followers_count'])) {
+				$count = $data['followers_count'];
+			}
+
+			return $this->update($count, $id);
+		}
+
+		return $count;
+
+	}
+
 }
-
-
