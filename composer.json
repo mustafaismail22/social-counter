@@ -9,5 +9,10 @@
     "require": {
         "php": ">=5.3.0",
         "kertz/twitteroauth": "dev-master"
+    },
+    "autoload": {
+        "classmap": [
+            "./social-counter-class.php"
+        ]
     }
 }
