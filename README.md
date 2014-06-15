@@ -10,6 +10,8 @@ example
 	$Social = new Social();
 
 	echo $Social->facebook('https://www.facebook.com/facebook');
+	
+	echo $Social->twitter( "twitter username", "consumer key ", "consumer secret" , "access token" , "access token secret");
 
 	echo $Social->dribbble('http://dribbble.com/dribbble');
 
