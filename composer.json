@@ -1,0 +1,13 @@
+{
+    "name": "mustafaismail22/social-counter",
+    "description": "Display count number of each social media",
+    "license": "MIT",
+    "authors": [{
+        "name": "Mustafa ismail",
+        "homepage": "http://mustafaismail.co/"
+    }],
+    "require": {
+        "php": ">=5.3.0",
+        "kertz/twitteroauth": "dev-master"
+    }
+}
