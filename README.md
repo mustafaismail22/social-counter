@@ -8,6 +8,8 @@ example
 ==============
 
 	$Social = new Social();
+	
+	$Social->set_prefix('prefix_');
 
 	echo $Social->facebook('https://www.facebook.com/facebook');
 	
