@@ -11,11 +11,9 @@
  *
  */
 
-
 class Social{
 
-	private  $cacheTime ;
-
+	private   $cacheTime ;
 	private   $dribbble = 'dribbble_count';
 	private   $vimeo 	= 'vimeo_count';
 	private   $youtube = 'youtube_count';
@@ -23,30 +21,31 @@ class Social{
 	private   $github = 'github_count';
 	private   $twitter = 'twitter_count';
 
-	
-
-	function __construct(){
-		
-		$this->cacheTime = 60 * 5 ; // 5 minute
+	function __construct($cacheTime = 5){
+		$this->cacheTime = 60 * $cacheTime ; // 5 minute
 	}
 
 	private function curl($url){
 
-		// $ch = curl_init();
-		// curl_setopt($ch, CURLOPT_HEADER, 0);
-		// curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-		// curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		// curl_setopt($ch, CURLOPT_URL, $url);
-		// $data = curl_exec($ch);
-		// curl_close($ch);
+		if (function_exists("wp_remote_get")) {
 
-		$data = wp_remote_get($url);
-
-		if ( is_wp_error( $data  ) ) {
-			return '';
+			$data = wp_remote_get($url);
+			if ( is_wp_error( $data  ) ) {
+				return '';
+			}
+			return $data['body'];
 		}
 
-		return $data['body'];
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_HEADER, 0);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+		curl_setopt($ch, CURLOPT_URL, $url);
+		$data = curl_exec($ch);
+		curl_close($ch);
+
+		return $data;
+
 	}
 
 	private function update( $data = null , $id = null) {
@@ -55,22 +54,58 @@ class Social{
 
 		if ( $data != 0  ) {
 			// Save our new transient.
-			set_transient($id, $data , $this->cacheTime );
+			$this->set_transient($id, $data , $this->cacheTime );
 		}
 
 		return  $data ;
-
 	}
 
 	public function reset() {
 
-		set_transient( $this->dribbble , 0 , 1);
-		set_transient( $this->vimeo , 0 , 1);
-		set_transient( $this->youtube , 0 , 1);
-		set_transient( $this->facebook , 0 , 1);
-		set_transient( $this->github , 0 , 1);
-		set_transient( $this->twitter , 0 , 1);
+		$this->set_transient( $this->dribbble , 0 , 1);
+		$this->set_transient( $this->vimeo , 0 , 1);
+		$this->set_transient( $this->youtube , 0 , 1);
+		$this->set_transient( $this->facebook , 0 , 1);
+		$this->set_transient( $this->github , 0 , 1);
+		$this->set_transient( $this->twitter , 0 , 1);
 
+	}
+
+	public function set_prefix( $prefix = '') {
+
+		$this->dribbble 	= $prefix . $this->dribbble ; 
+		$this->vimeo 		= $prefix . $this->vimeo ;	
+		$this->youtube 		= $prefix . $this->youtube ; 
+		$this->facebook 	= $prefix . $this->facebook ;
+		$this->github 		= $prefix . $this->github;
+		$this->twitter 		= $prefix . $this->twitter;
+
+	}
+
+	private function set_transient($id , $data , $expiration){
+
+		if (function_exists("set_transient")) {
+			return set_transient($id , $data , $expiration);
+		}
+
+		if ($expiration == 1) {
+			return setcookie( $id , '', time()-60 );
+		}else {
+			return setcookie ( $id , $data , time()+$expiration );
+		}
+	}
+
+	private function get_transient($id){
+
+		if (function_exists("get_transient")) {
+			return get_transient($id);
+		}
+
+		if (isset($_COOKIE[$id])) {
+			return $_COOKIE[$id];
+		}
+
+		return false;
 	}
 
 	public function dribbble( $page_link , $id = null ) {
@@ -82,7 +117,7 @@ class Social{
 
 		$count = 0;
 
-		if( false === ( $count = get_transient($id) ) ){
+		if( false === ( $count = $this->get_transient($id) ) ){
 
 			$face_link = @parse_url($page_link);
 
@@ -117,7 +152,7 @@ class Social{
 
 		$count = 0;
 
-		if( false === ( $count = get_transient($id) ) ){
+		if( false === ( $count = $this->get_transient($id) ) ){
 
 			$face_link = @parse_url($page_link);
 
@@ -152,7 +187,7 @@ class Social{
 
 		$count = 0;
 
-		if( false === ( $count = get_transient($id) ) ){
+		if( false === ( $count = $this->get_transient($id) ) ){
 
 			$face_link = @parse_url($page_link);
 
@@ -187,7 +222,7 @@ class Social{
 
 		$count = 0;
 
-		if( false === ( $count = get_transient($id) ) ){
+		if( false === ( $count = $this->get_transient($id) ) ){
 
 			$face_link = @parse_url($page_link);
 
@@ -221,7 +256,7 @@ class Social{
 		$id = $this->github;
 		$count = 0;
 
-		if( false === ( $count = get_transient($id) ) ){
+		if( false === ( $count = $this->get_transient($id) ) ){
 
 			$face_link = @parse_url($page_link);
 
@@ -265,7 +300,7 @@ class Social{
 
 		$count = 0;
 
-		if( false === ( $count = get_transient($id) ) ){
+		if( false === ( $count = $this->get_transient($id) ) ){
 
 			$Connection = new TwitterOAuth( $consumer_key , $consumer_secret , $access_token , $access_token_secret	);
 			$data = (array) $Connection->get('users/show', array('screen_name' => $twitter_username));
