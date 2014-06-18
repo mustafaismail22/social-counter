@@ -20,16 +20,18 @@ class Social{
 	private   $facebook = 'facebook_count';
 	private   $github = 'github_count';
 	private   $twitter = 'twitter_count';
+	private   $instagram = 'instagram_count';
+	private   $google = 'google_count';
 
-	function __construct($cacheTime = 5){
-		$this->cacheTime = 60 * $cacheTime ; // 5 minute
+	function __construct($cacheTime = 30){
+		$this->cacheTime = 60 * $cacheTime ; // 30 minute
 	}
 
 	private function curl($url){
 
 		if (function_exists("wp_remote_get")) {
 
-			$data = wp_remote_get($url);
+			$data = wp_remote_get($url , array( 'timeout' => 5 ));
 			if ( is_wp_error( $data  ) ) {
 				return '';
 			}
@@ -68,6 +70,8 @@ class Social{
 		$this->set_transient( $this->facebook , 0 , 1);
 		$this->set_transient( $this->github , 0 , 1);
 		$this->set_transient( $this->twitter , 0 , 1);
+		$this->set_transient( $this->instagram , 0 , 1);
+		$this->set_transient( $this->google , 0 , 1);
 
 	}
 
@@ -79,6 +83,8 @@ class Social{
 		$this->facebook 	= $prefix . $this->facebook ;
 		$this->github 		= $prefix . $this->github;
 		$this->twitter 		= $prefix . $this->twitter;
+		$this->instagram 	= $prefix . $this->instagram;
+		$this->google 		= $prefix . $this->google;
 
 	}
 
@@ -115,8 +121,6 @@ class Social{
 
 		$id = $this->dribbble;
 
-		$count = 0;
-
 		if( false === ( $count = $this->get_transient($id) ) ){
 
 			$face_link = @parse_url($page_link);
@@ -139,7 +143,7 @@ class Social{
 
 		}
 
-		return $count;
+		return (int) $count;
 
 	}
 
@@ -149,8 +153,6 @@ class Social{
 			$this->vimeo = $id;
 
 		$id = $this->vimeo;
-
-		$count = 0;
 
 		if( false === ( $count = $this->get_transient($id) ) ){
 
@@ -174,7 +176,7 @@ class Social{
 
 		}
 
-		return $count;
+		return (int) $count;
 
 	}
 
@@ -184,8 +186,6 @@ class Social{
 			$this->youtube = $id;
 
 		$id = $this->youtube;
-
-		$count = 0;
 
 		if( false === ( $count = $this->get_transient($id) ) ){
 
@@ -209,7 +209,7 @@ class Social{
 
 		}
 
-		return $count;
+		return (int) $count;
 
 	}
 
@@ -219,8 +219,6 @@ class Social{
 			$this->facebook = $id;
 
 		$id = $this->facebook;
-
-		$count = 0;
 
 		if( false === ( $count = $this->get_transient($id) ) ){
 
@@ -244,7 +242,7 @@ class Social{
 
 		}
 
-		return $count;
+		return (int) $count;
 
 	}
 
@@ -254,7 +252,6 @@ class Social{
 			$this->github = $id;
 
 		$id = $this->github;
-		$count = 0;
 
 		if( false === ( $count = $this->get_transient($id) ) ){
 
@@ -279,7 +276,7 @@ class Social{
 
 		}
 
-		return $count;
+		return (int) $count;
 
 	}
 
@@ -298,8 +295,6 @@ class Social{
 
 		$id = $this->twitter;
 
-		$count = 0;
-
 		if( false === ( $count = $this->get_transient($id) ) ){
 
 			$Connection = new TwitterOAuth( $consumer_key , $consumer_secret , $access_token , $access_token_secret	);
@@ -312,8 +307,80 @@ class Social{
 			return $this->update($count, $id);
 		}
 
-		return $count;
+		return (int) $count;
 
 	}
+
+	//  find your instagram access token http://stylehatch.co/instagram/
+	public function instagram( $access_token = null , $userid = null , $id = null ) {
+
+		if ( empty($access_token) )
+			return '-1';
+
+		if (!empty($id))
+			$this->instagram = $id;
+
+		$id = $this->instagram;
+
+		if( false === ( $count = $this->get_transient($id) ) ){
+
+				if ( empty($userid) ) {
+					$userid = explode(".", $access_token);
+					$userid  = $userid[0];
+				}
+
+				if ( !is_numeric($userid) ) {
+					$userid = json_decode($this->curl("https://api.instagram.com/v1/users/search?q={$userid}&access_token={$access_token}") , true );
+					$userid = (isset($userid['data']['0']['id'])) ? $userid['data']['0']['id'] : '' ;
+				}
+
+				$json = "https://api.instagram.com/v1/users/{$userid}/?access_token={$access_token}";
+				$data = json_decode( $this->curl($json) , true);
+
+				if ( isset( $data['meta']['code']) && $data['meta']['code'] == 200 && isset($data['data']['counts']['followed_by']) ) {
+					$count = $data['data']['counts']['followed_by'];
+				}
+
+			return $this->update($count, $id);
+
+		}
+
+		return (int) $count;
+	}
+
+
+
+	public function google( $url = null , $id = null ) {
+
+		if (!empty($id))
+			$this->google = $id;
+
+		$id = $this->google;
+
+		if( false === ( $count = $this->get_transient($id) ) ){
+
+			$face_link = @parse_url($url);
+
+			if( isset($face_link['host']) && ( $face_link['host'] == 'plus.google.com' ) ){
+
+				$url = str_replace('+', '%2B', $url);
+				$url = "https://apis.google.com/u/0/_/widget/render/page?usegapi=1&bsv=o&width=180&showcoverphoto=0&showtagline=0&hl=en-US&href={$url}";
+				$data =  $this->curl($url);
+
+				preg_match('/<div class="gge mgd Oae" style="font-size:11px;">(.*?)<\/div>/s', $data, $data);
+
+				if (!empty($data)){
+					$count = preg_replace('/[^0-9_]/','', $data[1] );
+				}
+
+				return $this->update($count, $id);
+			}
+
+		}
+
+		return (int) $count;
+	}
+
+
 
 }
